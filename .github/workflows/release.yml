@@ -1,0 +1,53 @@
+name: Release
+
+# Triggered ONLY by a published GitHub Release (manually created).
+# Never publish automatically from a push.
+on:
+  release:
+    types: [ published ]
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_NOLOGO: true
+
+jobs:
+
+  release:
+    name: Build, Test & Publish
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build -c Release -warnaserror
+
+      - name: Test (Release)
+        run: dotnet test -c Release --no-build -v minimal
+
+      - name: Pack
+        run: |
+          dotnet pack src/NScreenplay.Core/NScreenplay.Core.csproj -c Release --no-build -o artifacts/
+          dotnet pack src/NScreenplay.Playwright/NScreenplay.Playwright.csproj -c Release --no-build -o artifacts/
+          dotnet pack src/NScreenplay.Reqnroll/NScreenplay.Reqnroll.csproj -c Release --no-build -o artifacts/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-packages
+          path: artifacts/*.nupkg
+
+      # Publishing is DISABLED until explicitly uncommented.
+      # To enable: add NUGET_API_KEY to repository secrets and uncomment below.
+      #
+      # - name: Publish to NuGet
+      #   run: dotnet nuget push artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

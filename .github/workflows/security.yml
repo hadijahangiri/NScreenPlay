@@ -1,0 +1,55 @@
+name: Security
+
+on:
+  schedule:
+    # Weekly on Mondays at 08:00 UTC
+    - cron: '0 8 * * 1'
+  push:
+    branches: [ main ]
+    paths:
+      - '**/*.csproj'
+      - '**/Directory.Build.props'
+      - '**/*.deps.json'
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_NOLOGO: true
+
+jobs:
+
+  dependency-check:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore (with vulnerability audit)
+        run: dotnet restore --disable-parallel
+
+      - name: Build
+        run: dotnet build -warnaserror
+
+      # dotnet list package --vulnerable fails the job when high-severity issues are found
+      - name: Check for vulnerable packages
+        run: |
+          dotnet list package --vulnerable --include-transitive 2>&1 | tee vuln-report.txt
+          if (Select-String "High\s*Severity|Critical\s*Severity" vuln-report.txt) {
+            Write-Error "High or Critical severity vulnerabilities found. See report above."
+            exit 1
+          }
+        shell: pwsh
+
+      - name: Upload vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnerability-report
+          path: vuln-report.txt
+          retention-days: 30

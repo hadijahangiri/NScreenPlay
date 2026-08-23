@@ -1,0 +1,26 @@
+<Project>
+
+  <!-- Shared build properties for all NScreenplay projects -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Authors>NScreenplay Contributors</Authors>
+    <Company>NScreenplay</Company>
+    <Copyright>Copyright © 2026 NScreenplay Contributors</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/nscreenplay/nscreenplay</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nscreenplay/nscreenplay</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <NoWarn>NU1900</NoWarn>
+
+    <!-- Deterministic builds for reproducibility -->
+    <Deterministic>true</Deterministic>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+</Project>

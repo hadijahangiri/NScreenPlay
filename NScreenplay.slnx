@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/Login/Login.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/NScreenplay.Core/NScreenplay.Core.csproj" />
+    <Project Path="src/NScreenplay.Mcp/NScreenplay.Mcp.csproj" />
+    <Project Path="src/NScreenplay.Playwright/NScreenplay.Playwright.csproj" />
+    <Project Path="src/NScreenplay.Reqnroll/NScreenplay.Reqnroll.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NScreenplay.Core.Tests/NScreenplay.Core.Tests.csproj" />
+    <Project Path="tests/NScreenplay.Mcp.Tests/NScreenplay.Mcp.Tests.csproj" />
+    <Project Path="tests/NScreenplay.Playwright.Tests/NScreenplay.Playwright.Tests.csproj" />
+    <Project Path="tests/NScreenplay.Reqnroll.Tests/NScreenplay.Reqnroll.Tests.csproj" />
+  </Folder>
+</Solution>

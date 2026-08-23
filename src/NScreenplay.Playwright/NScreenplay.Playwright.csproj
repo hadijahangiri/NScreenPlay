@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\NScreenplay.Core\NScreenplay.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" Version="1.49.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>NScreenplay.Playwright</RootNamespace>
+    <PackageId>NScreenplay.Playwright</PackageId>
+    <Description>Playwright browser automation integration for NScreenplay: BrowseTheWeb ability, Target resolution, and built-in interactions (Click, Enter, Navigate, Select, Check) and questions (Text, Visibility, PageTitle, CurrentUrl, InputValue).</Description>
+    <PackageTags>screenplay;playwright;test-automation;browser;dotnet</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

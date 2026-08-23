@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+
+  build-and-test:
+    name: Build & Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ windows-latest, ubuntu-latest ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build (Debug — warnings as errors)
+        run: dotnet build --no-restore -warnaserror
+
+      - name: Test (Debug)
+        run: dotnet test --no-build -v minimal
+
+      - name: Build (Release)
+        run: dotnet build -c Release --no-restore -warnaserror
+
+      - name: Test (Release)
+        run: dotnet test -c Release --no-build -v minimal
+
+      - name: Install Playwright Chromium (for sample tests)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $ps1 = Get-ChildItem -Recurse -Path samples/Login/bin -Filter playwright.ps1 | Select-Object -First 1
+          if ($ps1) { & powershell -File $ps1.FullName install chromium }
+
+      - name: Run Login Sample (Windows only)
+        if: matrix.os == 'windows-latest'
+        run: dotnet test samples/Login/Login.csproj -c Release --no-build -v minimal
+
+  package-validation:
+    name: Package Validation
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Build Release
+        run: dotnet build -c Release -warnaserror
+
+      - name: Pack
+        run: |
+          dotnet pack src/NScreenplay.Core/NScreenplay.Core.csproj -c Release --no-build -o artifacts/
+          dotnet pack src/NScreenplay.Playwright/NScreenplay.Playwright.csproj -c Release --no-build -o artifacts/
+          dotnet pack src/NScreenplay.Reqnroll/NScreenplay.Reqnroll.csproj -c Release --no-build -o artifacts/
+
+      - name: Upload packages (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: nupkgs
+          path: artifacts/*.nupkg
+          retention-days: 30

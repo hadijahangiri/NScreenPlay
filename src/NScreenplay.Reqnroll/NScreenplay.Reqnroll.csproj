@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>NScreenplay.Reqnroll.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NScreenplay.Core\NScreenplay.Core.csproj" />
+    <ProjectReference Include="..\NScreenplay.Playwright\NScreenplay.Playwright.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Reqnroll" Version="3.3.4" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>NScreenplay.Reqnroll</RootNamespace>
+    <PackageId>NScreenplay.Reqnroll</PackageId>
+    <Description>Reqnroll (BDD/Gherkin) integration for NScreenplay: Actor lifecycle hooks, ScenarioActor DI, BrowserManager, and scenario isolation for parallel test execution.</Description>
+    <PackageTags>screenplay;reqnroll;bdd;gherkin;test-automation;dotnet</PackageTags>
+    <NoWarn>NU1900</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

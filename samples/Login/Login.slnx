@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="../../src/NScreenplay.Core/NScreenplay.Core.csproj" />
+  <Project Path="../../src/NScreenplay.Playwright/NScreenplay.Playwright.csproj" />
+  <Project Path="../../src/NScreenplay.Reqnroll/NScreenplay.Reqnroll.csproj" />
+  <Project Path="Login.csproj" />
+</Solution>

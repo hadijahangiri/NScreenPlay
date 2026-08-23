@@ -1,0 +1,93 @@
+## .NET Build artifacts
+bin/
+obj/
+out/
+artifacts/
+
+## NuGet packages cache
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+packages/
+!samples/**/*.nupkg
+
+## Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.pidb
+*.pdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*.log
+*.vspscc
+*.vssscc
+.builds
+
+## VS Code (keep .vscode/settings.json and launch.json if they exist, exclude sensitive)
+.vscode/.env
+.vscode/secrets.*
+
+## Test results
+TestResults/
+coverage/
+*.trx
+*.coveragexml
+*.coverage
+
+## Playwright artifacts (runtime, not source)
+**/playwright-traces/
+**/playwright-videos/
+**/playwright-screenshots/
+test-results/
+
+## Environment / secrets
+.env
+.env.local
+.env.*.local
+*.env
+secrets.json
+appsettings.Development.json
+appsettings.Local.json
+
+## macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+## Windows
+Desktop.ini
+$RECYCLE.BIN/
+ehthumbs.db
+
+## JetBrains Rider
+*.sln.iml
+
+## Temporary files
+*.swp
+*.bak
+*.orig
+*~
+
+## Resharper
+_ReSharper*/
+*.resharper
+[Bb]ackup*/
+
+## MSBuild cache
+.msbuildcache/
+msbuild.log
