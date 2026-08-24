@@ -7,47 +7,117 @@ on:
     types: [ published ]
 
 env:
-  DOTNET_VERSION: '10.0.x'
   DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+# Minimum permissions required for OIDC NuGet Trusted Publishing.
+# id-token: write  — obtain GitHub OIDC token to authenticate with NuGet
+# contents: read   — checkout the repository
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
 
   release:
-    name: Build, Test & Publish
+    name: Build, Test, Pack & Publish
     runs-on: windows-latest
+    # No GitHub Environment — must be absent to match NuGet Trusted Publishing policy:
+    #   Repository: hadijahangiri/NScreenPlay
+    #   Workflow: release.yml
+    #   Environment: (none)
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore NScreenplay.sln
 
-      - name: Build (Release, warnings as errors)
-        run: dotnet build -c Release -warnaserror
+      - name: Build Release (warnings as errors)
+        run: dotnet build NScreenplay.sln -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
 
-      - name: Test (Release)
-        run: dotnet test -c Release --no-build -v minimal
+      - name: Test Release
+        # Explicit project list excludes samples/ which requires a Playwright browser
+        run: |
+          dotnet test tests/NScreenplay.Core.Tests           -c Release --no-build -v minimal
+          dotnet test tests/NScreenplay.Mcp.Tests            -c Release --no-build -v minimal
+          dotnet test tests/NScreenplay.Playwright.Tests     -c Release --no-build -v minimal
+          dotnet test tests/NScreenplay.Reqnroll.Tests       -c Release --no-build -v minimal
+
+      - name: Install Playwright Chromium (for Login sample test)
+        shell: pwsh
+        run: |
+          $ps1 = Get-ChildItem -Recurse -Path samples/Login/bin/Release -Filter playwright.ps1 -ErrorAction SilentlyContinue |
+                 Select-Object -First 1 -ExpandProperty FullName
+          if ($ps1) { powershell -File $ps1 install chromium }
+          else { Write-Warning "playwright.ps1 not found; skipping browser install" }
+
+      - name: Test Login Sample (full e2e with Playwright)
+        run: dotnet test samples/Login/Login.csproj -c Release --no-build -v minimal
 
       - name: Pack
+        # Only the three public NScreenplay packages — no MCP, no tests, no samples
         run: |
-          dotnet pack src/NScreenplay.Core/NScreenplay.Core.csproj -c Release --no-build -o artifacts/
+          dotnet pack src/NScreenplay.Core/NScreenplay.Core.csproj         -c Release --no-build -o artifacts/
           dotnet pack src/NScreenplay.Playwright/NScreenplay.Playwright.csproj -c Release --no-build -o artifacts/
           dotnet pack src/NScreenplay.Reqnroll/NScreenplay.Reqnroll.csproj -c Release --no-build -o artifacts/
 
-      - name: Upload artifacts
+      - name: Validate packages
+        # Verify expected package IDs, version 0.1.0, and no unexpected files
+        shell: pwsh
+        run: |
+          $pkgs = Get-ChildItem artifacts/*.nupkg
+          Write-Host "Generated packages:"
+          $pkgs | ForEach-Object { Write-Host "  $($_.Name) ($([math]::Round($_.Length/1024,1)) KB)" }
+
+          $expected = @("NScreenplay.Core.0.1.0.nupkg","NScreenplay.Playwright.0.1.0.nupkg","NScreenplay.Reqnroll.0.1.0.nupkg")
+          foreach ($e in $expected) {
+            if (-not (Test-Path "artifacts/$e")) {
+              Write-Error "Expected package missing: $e"
+              exit 1
+            }
+          }
+          Write-Host "All expected packages present."
+
+          # Verify no unexpected packages (e.g. debug, test, MCP, samples)
+          $unexpected = $pkgs | Where-Object { $_.Name -notmatch '^NScreenplay\.(Core|Playwright|Reqnroll)\.' }
+          if ($unexpected) {
+            Write-Error "Unexpected packages found: $($unexpected.Name -join ', ')"
+            exit 1
+          }
+          Write-Host "Package validation passed."
+
+      - name: Upload packages (artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: release-packages
+          name: release-packages-${{ github.run_id }}
           path: artifacts/*.nupkg
+          if-no-files-found: error
 
-      # Publishing is DISABLED until explicitly uncommented.
-      # To enable: add NUGET_API_KEY to repository secrets and uncomment below.
-      #
-      # - name: Publish to NuGet
-      #   run: dotnet nuget push artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      # NuGet Trusted Publishing via GitHub OIDC.
+      # No API key required. Authentication is performed via the GitHub OIDC token.
+      # The NuGet Trusted Publishing policy must be configured at nuget.org with:
+      #   Repository owner: hadijahangiri
+      #   Repository:       NScreenPlay
+      #   Workflow file:    release.yml
+      #   Environment:      (none)
+      - name: Authenticate with NuGet (OIDC Trusted Publishing)
+        uses: NuGet/login@v1
+        with:
+          source-url: https://api.nuget.org/v3/index.json
+
+      - name: Publish to NuGet
+        # Publish in dependency order: Core first, then Playwright, then Reqnroll.
+        # If any push fails, the workflow stops — no partial publish recovery.
+        run: |
+          dotnet nuget push artifacts/NScreenplay.Core.0.1.0.nupkg          --source https://api.nuget.org/v3/index.json
+          dotnet nuget push artifacts/NScreenplay.Playwright.0.1.0.nupkg    --source https://api.nuget.org/v3/index.json
+          dotnet nuget push artifacts/NScreenplay.Reqnroll.0.1.0.nupkg      --source https://api.nuget.org/v3/index.json
+
