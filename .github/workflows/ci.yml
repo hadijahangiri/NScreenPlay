@@ -37,7 +37,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ windows-latest, ubuntu-latest ]
+        # windows-latest: full suite including Login (with Playwright)
+        # ubuntu-24.04: framework tests only (no browser required)
+        os: [ windows-latest, ubuntu-24.04 ]
 
     steps:
       - name: Checkout
