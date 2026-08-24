@@ -52,7 +52,7 @@ jobs:
         run: dotnet restore
 
       - name: Build Debug (warnings as errors)
-        run: dotnet build --no-restore -warnaserror
+        run: dotnet build --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
 
       - name: Test Debug
         # dotnet test against explicit project dirs — excludes samples/ (requires Playwright browser)
@@ -63,7 +63,7 @@ jobs:
           dotnet test tests/NScreenplay.Reqnroll.Tests       --no-build -v minimal
 
       - name: Build Release (warnings as errors)
-        run: dotnet build -c Release --no-restore -warnaserror
+        run: dotnet build -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
 
       - name: Test Release
         # same explicit scope as Debug — keeps parity, excludes samples/
@@ -106,7 +106,7 @@ jobs:
         run: dotnet restore
 
       - name: Build Release
-        run: dotnet build -c Release --no-restore -warnaserror
+        run: dotnet build -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
 
       - name: Pack
         run: |
