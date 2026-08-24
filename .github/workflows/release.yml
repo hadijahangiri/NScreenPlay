@@ -1,15 +1,26 @@
 name: Release
 
-# Triggered ONLY by a published GitHub Release (manually created).
+# Triggered by:
+# 1. Published GitHub Release (automatic)
+# 2. Manual workflow_dispatch with release_tag input (manual)
 # Never publish automatically from a push.
 on:
   release:
     types: [ published ]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Git tag to build and publish'
+        default: 'v0.1.0'
+        required: true
+        type: string
 
 env:
   DOTNET_NOLOGO: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
+  # Resolve release tag from either release event or manual input
+  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
 
 # Minimum permissions required for OIDC NuGet Trusted Publishing.
 # id-token: write  — obtain GitHub OIDC token to authenticate with NuGet
@@ -31,6 +42,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
