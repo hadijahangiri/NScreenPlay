@@ -55,13 +55,23 @@ jobs:
         run: dotnet build --no-restore -warnaserror
 
       - name: Test Debug
-        run: dotnet test --no-build -v minimal
+        # dotnet test against explicit project dirs — excludes samples/ (requires Playwright browser)
+        run: |
+          dotnet test tests/NScreenplay.Core.Tests           --no-build -v minimal
+          dotnet test tests/NScreenplay.Mcp.Tests            --no-build -v minimal
+          dotnet test tests/NScreenplay.Playwright.Tests     --no-build -v minimal
+          dotnet test tests/NScreenplay.Reqnroll.Tests       --no-build -v minimal
 
       - name: Build Release (warnings as errors)
         run: dotnet build -c Release --no-restore -warnaserror
 
       - name: Test Release
-        run: dotnet test -c Release --no-build -v minimal
+        # same explicit scope as Debug — keeps parity, excludes samples/
+        run: |
+          dotnet test tests/NScreenplay.Core.Tests           -c Release --no-build -v minimal
+          dotnet test tests/NScreenplay.Mcp.Tests            -c Release --no-build -v minimal
+          dotnet test tests/NScreenplay.Playwright.Tests     -c Release --no-build -v minimal
+          dotnet test tests/NScreenplay.Reqnroll.Tests       -c Release --no-build -v minimal
 
       - name: Install Playwright Chromium
         if: matrix.os == 'windows-latest'
