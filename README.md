@@ -1,263 +1,212 @@
 # NScreenplay
 
-**AI-native Screenplay Test Automation Framework for .NET**
+[![CI](https://img.shields.io/github/actions/workflow/status/hadijahangiri/NScreenPlay/ci.yml?branch=main)](https://github.com/hadijahangiri/NScreenPlay/actions/workflows/ci.yml)
+[![NuGet Core](https://img.shields.io/nuget/v/NScreenplay.Core)](https://www.nuget.org/packages/NScreenplay.Core)
+[![NuGet Playwright](https://img.shields.io/nuget/v/NScreenplay.Playwright)](https://www.nuget.org/packages/NScreenplay.Playwright)
+[![NuGet Reqnroll](https://img.shields.io/nuget/v/NScreenplay.Reqnroll)](https://www.nuget.org/packages/NScreenplay.Reqnroll)
+[![Latest Release](https://img.shields.io/github/v/release/hadijahangiri/NScreenPlay)](https://github.com/hadijahangiri/NScreenPlay/releases)
+[![License](https://img.shields.io/github/license/hadijahangiri/NScreenPlay)](LICENSE)
 
-[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/nscreenplay/nscreenplay)
-[![Tests](https://img.shields.io/badge/tests-260%20passing-brightgreen)](https://github.com/nscreenplay/nscreenplay)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/nscreenplay/nscreenplay)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+An AI-native Screenplay Test Automation Framework for .NET.
 
-## What is NScreenplay?
+NScreenplay organizes automation around the Screenplay flow:
 
-NScreenplay brings the **Screenplay pattern** to modern .NET with first-class support for Playwright, Reqnroll (BDD/Gherkin), and AI agent integration via the Model Context Protocol (MCP).
+Actor → Ability → Task → Interaction → Question → Consequence
 
-It lets you write tests that read like business requirements and are understandable by both human developers and AI coding agents.
+That keeps tests readable for humans and discoverable for AI agents without hiding the real implementation.
 
-## Why Screenplay?
+## What Exists
 
-The Screenplay pattern organises test automation around **what a user does**, not **how the UI works**:
+- Screenplay core abstractions in `NScreenplay.Core`
+- Playwright integration in `NScreenplay.Playwright`
+- Reqnroll integration in `NScreenplay.Reqnroll`
+- AI agent Skills under `skills/`
+- MCP server in `src/NScreenplay.Mcp`
+- Deterministic failure analysis
+- Approval-gated healing proposals
+- Parallel scenario isolation via per-scenario browser contexts
 
-| Concept | Role |
-|---------|------|
-| **Actor** | The user or system performing actions |
-| **Ability** | What the Actor can do (browse, call APIs) |
-| **Task** | A business-level operation (Login, Checkout) |
-| **Interaction** | A single atomic action (Click, Enter, Navigate) |
-| **Target** | A semantic UI element (LoginPage.Username) |
-| **Question** | A state query (Text.Of, Visibility.Of) |
-| **Consequence** | A verification (DashboardIsDisplayed) |
+## Install
+
+```bash
+dotnet add package NScreenplay.Core --version 0.1.0
+dotnet add package NScreenplay.Playwright --version 0.1.0
+dotnet add package NScreenplay.Reqnroll --version 0.1.0
+```
 
 ## Quick Start
 
-```bash
-dotnet add package NScreenplay.Core
-dotnet add package NScreenplay.Playwright
-dotnet add package NScreenplay.Reqnroll
-```
-
-### Minimal Example (without BDD)
-
 ```csharp
+using Microsoft.Playwright;
 using NScreenplay.Core;
 using NScreenplay.Playwright;
 
-// 1. Create an Actor
-var actor = Actor.Named("Alice");
-
-// 2. Grant browser ability
-actor.Can(BrowseTheWeb.Using(page));  // IPage from Playwright
-
-// 3. Navigate and log in (Task)
-await actor.AttemptsTo(Navigate.To("https://myapp.com/login"));
-await actor.AttemptsTo(
-    LoginWithCredentials.Using("alice@example.com", "secret"));
-
-// 4. Verify (Question + Consequence)
-var isVisible = await actor.AsksFor(Visibility.Of(DashboardPage.Heading));
-```
-
-### BDD Example (with Reqnroll)
-
-```gherkin
-Feature: Login
-
-  Scenario: Successful login
-    Given the user is on the login page
-    When the user logs in with valid credentials
-    Then the dashboard should be displayed
-```
-
-```csharp
-[Binding]
-public sealed class LoginSteps
+static class LoginPage
 {
-    private readonly ScenarioActor _scenario;
-    public LoginSteps(ScenarioActor scenario) => _scenario = scenario;
-
-    [When("the user logs in with valid credentials")]
-    public Task Login() =>
-        _scenario.Actor.AttemptsTo(LoginAs.ValidUser());
-
-    [Then("the dashboard should be displayed")]
-    public Task Verify() =>
-        _scenario.Actor.Should(DashboardIsDisplayed.Now());
+    public static Target Username = Target.The("username field").ByTestId("username-input");
+    public static Target Password = Target.The("password field").ByTestId("password-input");
+    public static Target LoginButton = Target.The("login button").ByTestId("login-button");
+    public static Target ErrorMessage = Target.The("login error message").ByTestId("login-error");
 }
+
+await using IPlaywright playwright = await Playwright.CreateAsync();
+await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+await using var page = await browser.NewPageAsync();
+
+var actor = Actor.Named("Alice");
+actor.Can(BrowseTheWeb.Using(page));
+
+await actor.AttemptsTo(Navigate.To("https://example.com/login"));
+await actor.AttemptsTo(Enter.TheValue("alice@example.com").Into(LoginPage.Username));
+await actor.AttemptsTo(Enter.TheValue("secret123").Into(LoginPage.Password));
+await actor.AttemptsTo(Click.On(LoginPage.LoginButton));
+
+var visible = await actor.AsksFor(Visibility.Of(LoginPage.ErrorMessage));
 ```
 
-## Architecture
+## Playwright
 
-```
-Reqnroll → NScreenplay.Reqnroll → NScreenplay.Core ← NScreenplay.Playwright
-                                           ↑
-                                   NScreenplay.Mcp (AI/MCP — optional)
-```
+`BrowseTheWeb` wraps a Playwright `IPage` and is disposed when the `Actor` is disposed.
 
-**Core is completely independent.** Zero external dependencies. Integrations depend on Core, never the reverse.
+Supported interactions and questions include:
 
-## Package Structure
+- `Navigate.To(url)`
+- `Click.On(target)`
+- `Enter.TheValue(value).Into(target)`
+- `Select.TheOption(label).From(target)`
+- `Check.The(target)` / `Check.Not(target)`
+- `Text.Of(target)`
+- `Visibility.Of(target)`
+- `CurrentUrl.Value()`
+- `PageTitle.Value()`
+- `InputValue.Of(target)`
 
-| Package | Purpose |
-|---------|---------|
-| `NScreenplay.Core` | Core abstractions (Actor, Ability, Task, etc.) |
-| `NScreenplay.Playwright` | Playwright browser automation integration |
-| `NScreenplay.Reqnroll` | Reqnroll BDD/Gherkin integration |
-| `NScreenplay.Mcp` | MCP server for AI agent integration (optional) |
+## Reqnroll
 
-## Supported Versions
+`NScreenplay.Reqnroll` provides:
 
-- **.NET 10** (target framework)
-- **Microsoft.Playwright 1.49.0**
-- **Reqnroll 3.3.4**
-- **ModelContextProtocol 2.2.0** (MCP server, optional)
+- `BrowserManager`
+- `ScenarioActor`
+- `NScreenplayHooks`
+- `ScenarioActorExtensions.InitializeFromFeatureBrowserAsync(...)`
 
-## AI/MCP Integration
+The Login sample shows the supported flow with constructor-injected `ScenarioActor` and business-level step definitions.
 
-NScreenplay exposes its capabilities to AI coding agents via the Model Context Protocol:
+## Skills
+
+Skills are instructional `SKILL.md` files used by AI agents. They are not executable code.
+
+They live in `skills/<name>/SKILL.md`:
+
+- `skills/screenplay/SKILL.md`
+- `skills/playwright/SKILL.md`
+- `skills/reqnroll/SKILL.md`
+- `skills/test-authoring/SKILL.md`
+- `skills/test-review/SKILL.md`
+- `skills/failure-analysis/SKILL.md`
+- `skills/healing/SKILL.md`
+
+The MCP server can list skills and return the full content of a named skill.
+
+## MCP
+
+Run the server with:
 
 ```bash
 dotnet run --project src/NScreenplay.Mcp
 ```
 
-Available MCP tools: `nscreenplay_list_tasks`, `nscreenplay_list_targets`, `nscreenplay_analyze_failure`, `nscreenplay_create_test_plan`, and more.
+Actual tools provided by `NScreenplay.Mcp`:
 
-The AI can **DISCOVER**, **ANALYZE**, **PLAN**, and **PROPOSE** — but cannot modify code without explicit human approval.
+- `nscreenplay_get_framework_info`
+- `nscreenplay_list_tasks`
+- `nscreenplay_list_targets`
+- `nscreenplay_list_interactions`
+- `nscreenplay_list_questions`
+- `nscreenplay_list_skills`
+- `nscreenplay_get_skill`
+- `nscreenplay_analyze_failure`
+- `nscreenplay_analyze_requirement`
+- `nscreenplay_create_test_plan`
+- `nscreenplay_get_failure_context`
+- `nscreenplay_get_fix_proposal`
+- `nscreenplay_list_fix_proposals`
+- `nscreenplay_reject_fix_proposal`
+- `nscreenplay_approve_fix_proposal`
+- `nscreenplay_apply_fix_proposal`
+- `nscreenplay_get_audit_log`
 
-## Sample
+The server is read-only for discovery and analysis, and the healing workflow requires explicit approval before file changes are applied.
 
-See [`samples/Login/`](samples/Login/) for a complete working example demonstrating:
-- Reqnroll feature file
-- NScreenplay Actor + Tasks
-- Playwright interactions
-- Targets defined as Page classes
-- Consequences for verification
+## Healing
+
+Healing is AI-assisted but not autonomous.
+
+- proposals can be created
+- proposals must be approved by a human
+- proposals are not applied automatically
+- the server does not execute shell commands
+- the server does not run arbitrary repository content as instructions
+
+## Architecture
+
+```mermaid
+graph TD
+    R[Reqnroll] --> NR[NScreenplay.Reqnroll]
+    NR --> C[NScreenplay.Core]
+    P[NScreenplay.Playwright] --> C
+    M[NScreenplay.Mcp] --> C
+    S[skills/\nSKILL.md files] --> M
+    L[samples/Login] --> NR
+    L --> P
+```
+
+## Project Structure
+
+- `src/NScreenplay.Core` - core Screenplay abstractions
+- `src/NScreenplay.Playwright` - Playwright integration
+- `src/NScreenplay.Reqnroll` - Reqnroll integration
+- `src/NScreenplay.Mcp` - MCP server
+- `tests/NScreenplay.Core.Tests` - core tests
+- `tests/NScreenplay.Playwright.Tests` - Playwright tests
+- `tests/NScreenplay.Reqnroll.Tests` - Reqnroll tests
+- `tests/NScreenplay.Mcp.Tests` - MCP tests
+- `samples/Login` - end-to-end Login sample
+- `skills` - AI agent instructions
+- `docs` - supporting documentation
 
 ## Status
 
-⚠️ **v0.1.0 — Pre-release.** APIs may change before v1.0.
+v0.1.0. This is an early public release, not a production-stability claim.
 
-## Contributing
+## Limitations
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+- Chromium is the only browser path implemented in `BrowserManager`
+- `NScreenplayConfiguration` is a global set-once singleton
+- healing rules are regex-based, not AST-based
+- `NSCREENPLAY_WORKSPACE_ROOT` is required for healing file operations
+- the MCP server is intentionally read-only for discovery and analysis
+- the Login sample uses a self-contained HTML page, not a running web server
 
-## License
+## Links
 
-[MIT License](LICENSE)
+- [GitHub repository](https://github.com/hadijahangiri/NScreenPlay)
+- [GitHub releases](https://github.com/hadijahangiri/NScreenPlay/releases)
+- [NScreenplay.Core on NuGet](https://www.nuget.org/packages/NScreenplay.Core)
+- [NScreenplay.Playwright on NuGet](https://www.nuget.org/packages/NScreenplay.Playwright)
+- [NScreenplay.Reqnroll on NuGet](https://www.nuget.org/packages/NScreenplay.Reqnroll)
 
+## More Docs
 
-**Status**: Phase 0 - Architecture Proposal (Not yet implemented)
-
-## Vision
-
-NScreenplay brings the Screenplay pattern to modern .NET with first-class support for:
-
-- **Playwright** for browser automation
-- **Reqnroll** for BDD/Gherkin
-- **HTTP/API testing**
-- **AI Agents** that understand the framework structure
-- **Model Context Protocol (MCP)** for agent integration
-- **Agent Skills** that teach AI how to use the framework
-
-The framework is designed for **human readability** and **AI interoperability** simultaneously.
-
-## Why NScreenplay?
-
-### The Screenplay Pattern
-Screenplay provides a business-readable abstraction over test automation:
-- **Tasks** represent business-level actions
-- **Interactions** are atomic operations  
-- **Questions** query system state
-- **Consequences** verify expectations
-- **Actors** execute workflows
-
-### Why .NET?
-Modern C#, type safety, nullable reference types, LINQ, async/await, analyzers.
-
-### Why Playwright?
-Native browser synchronization, first-class async, rich debugging support.
-
-### Why Reqnroll?
-Production-grade BDD/Gherkin for .NET, active maintenance.
-
-### Why AI-Native?
-The framework must make it possible for AI agents to:
-- Understand the project structure
-- Discover existing Tasks, Targets, Questions
-- Analyze test failures
-- Suggest fixes
-- Learn project conventions
-
-## Project Status
-
-**Current Phase**: Architecture Proposal (Phase 0)
-
-**Expected Deliverables**:
-- [ ] Architecture diagram
-- [ ] Dependency graph  
-- [ ] Core API proposal
-- [ ] Lifecycle documentation
-- [ ] Async model explanation
-- [ ] Error handling strategy
-- [ ] Extensibility model
-- [ ] Risks & trade-offs
-
-**Timeline**: See [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) for detailed phase plan.
-
-## Installation (Pre-release)
-
-NScreenplay is not yet released. Follow development on GitHub.
-
-## Quick Example (Proposed)
-
-```csharp
-// Create an actor
-var actor = Actor.Named("User");
-
-// Grant ability to browse the web
-actor.Can(
-    BrowseTheWeb.Using(page)
-);
-
-// Perform a task
-await actor.AttemptsTo(
-    Login.WithCredentials(
-        "user@example.com",
-        "password"
-    )
-);
-
-// Ask a question
-var title = await actor.AsksFor(
-    Text.Of(Dashboard.Title)
-);
-
-// Verify consequences
-await actor.Should(
-    See.That(Dashboard.IsDisplayed())
-);
-```
-
-## Architecture Overview
-
-See [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) for:
-- Detailed architecture diagram
-- Dependency direction
-- Actor lifecycle
-- Async model
-- Extension model
-
-## Core Principles
-
-The framework follows 29 core principles:
-
-1. **Core Independence**: Core has ZERO dependencies on Playwright, Reqnroll, or test runners.
-2. **Dependency Direction**: Integrations depend on Core, never the reverse.
-3. **Minimal APIs**: 10 excellent abstractions over 50 mediocre ones.
-4. **Async-First**: All public APIs support async/await and CancellationToken.
-5. **No Global State**: No static Actor state, no service locators.
-6. **AI-First**: Framework exposes structured metadata, Skills, and MCP for agent interoperability.
-7. **Composability**: Actors, Abilities, Tasks, Interactions are composable.
-8. **Type Safety**: Use C# features (records, readonly, nullable).
-9. **Playwright-Native**: Use Playwright's built-in waiting, no polling.
+- [Getting started](docs/getting-started.md)
+- [Screenplay pattern](docs/screenplay-pattern.md)
+- [Playwright integration](docs/playwright.md)
+- [Reqnroll integration](docs/reqnroll.md)
+- [Skills](docs/skills.md)
+- [MCP](docs/mcp.md)
+- [AI](docs/ai.md)
+- [Healing](docs/healing.md)
+- [Architecture](docs/architecture.md)
 10. **Test Runner Independence**: Works with any .NET test framework.
 
 See [PRINCIPLES.md](docs/PRINCIPLES.md) for the complete list.

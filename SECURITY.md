@@ -4,48 +4,33 @@
 
 | Version | Supported |
 |---------|-----------|
-| 0.1.x   | ✅ Active  |
-| < 0.1   | ❌ None    |
+| 0.1.x | ✅ Active |
+| Older versions | ❌ None |
 
-NScreenplay is in early development (v0.1.0). Only the current release receives security fixes.
+## Security Model
+
+NScreenplay treats MCP and healing inputs as untrusted data.
+
+Documented protections in the current implementation:
+
+- MCP input is truncated before logging or analysis.
+- Skill names are validated before loading.
+- Healing paths are checked against the configured workspace root.
+- The MCP server does not execute shell commands.
+- The MCP server does not automatically modify repository files.
+- Healing requires explicit human approval before application.
+
+These controls reduce risk, but they are not a guarantee that the system is secure in every deployment.
 
 ## Reporting a Vulnerability
 
-⚠️ **Do not open a public GitHub issue for security vulnerabilities.**
+Do not open a public issue for security reports.
 
-> **[DECISION REQUIRED]** A private reporting email or GitHub private security advisory must be configured before public release.
->
-> Until then: open a GitHub private security advisory using the "Security" tab in this repository.
+Use GitHub private security advisories for:
 
-Please include:
+- path traversal concerns
+- approval-bypass concerns
+- secret leakage concerns
+- unintended code execution concerns
 
-- Description of the vulnerability
-- Steps to reproduce
-- Affected version(s)
-- Potential impact
-- Any suggested mitigation
-
-## Response Timeline
-
-We will acknowledge receipt within 7 days and provide an initial assessment within 14 days.
-
-## Scope
-
-### In scope
-
-- Authentication bypass in MCP tools
-- Path traversal in healing/file operations
-- Arbitrary code execution via MCP inputs
-- Secret exposure in logs or outputs
-- Approval boundary bypass in healing workflow
-- Prompt injection vulnerabilities
-
-### Out of scope
-
-- Vulnerabilities in the underlying frameworks (Playwright, Reqnroll, .NET) — report directly to those projects
-- Issues requiring physical access to the machine
-- Social engineering
-
-## Disclosure Policy
-
-We follow **responsible disclosure**. Please allow us reasonable time to address the issue before public disclosure.
+Include reproduction steps, affected version, and the expected impact.
