@@ -83,21 +83,32 @@ public class InputValidatorTests
     [Fact]
     public void IsValidAssemblyPath_ValidPath_ReturnsTrue()
     {
-        Assert.True(InputValidator.IsValidAssemblyPath(@"C:\projects\MyApp\bin\MyApp.dll"));
+        // Use a rooted path valid on both Windows and Linux
+        var validPath = Path.Combine(Path.GetTempPath(), "MyApp.dll");
+        Assert.True(InputValidator.IsValidAssemblyPath(validPath));
     }
 
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("relative/path.dll")]  // not rooted
-    [InlineData(@"C:\path\file.exe")]  // not .dll
-    [InlineData(@"C:\path\file.DLL")]  // uppercase — should still work (case insensitive)
-    public void IsValidAssemblyPath_InvalidOrEdgeCases_ReturnsFalseOrTrue(string? path)
+    public void IsValidAssemblyPath_InvalidPaths_ReturnsFalse(string? path)
     {
-        // The uppercase .DLL case should pass (OrdinalIgnoreCase used internally)
-        if (path == @"C:\path\file.DLL")
-            Assert.True(InputValidator.IsValidAssemblyPath(path));
-        else
-            Assert.False(InputValidator.IsValidAssemblyPath(path));
+        Assert.False(InputValidator.IsValidAssemblyPath(path));
+    }
+
+    [Fact]
+    public void IsValidAssemblyPath_NonDllExtension_ReturnsFalse()
+    {
+        var exePath = Path.Combine(Path.GetTempPath(), "file.exe");
+        Assert.False(InputValidator.IsValidAssemblyPath(exePath));
+    }
+
+    [Fact]
+    public void IsValidAssemblyPath_UppercaseDllExtension_ReturnsTrue()
+    {
+        // .DLL (uppercase) should work via OrdinalIgnoreCase
+        var dllPath = Path.Combine(Path.GetTempPath(), "file.DLL");
+        Assert.True(InputValidator.IsValidAssemblyPath(dllPath));
     }
 }

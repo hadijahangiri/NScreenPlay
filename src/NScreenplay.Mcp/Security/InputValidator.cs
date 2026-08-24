@@ -29,7 +29,11 @@ public static class InputValidator
         var fullPath = Path.GetFullPath(filePath);
         var fullRoot = Path.GetFullPath(rootDirectory)
             .TrimEnd(PathSeparators) + Path.DirectorySeparatorChar;
-        return fullPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase);
+        // Use Ordinal on Linux (case-sensitive FS), OrdinalIgnoreCase on Windows
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        return fullPath.StartsWith(fullRoot, comparison);
     }
 
     /// <summary>
