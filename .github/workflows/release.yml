@@ -127,7 +127,6 @@ jobs:
         with:
           user: NScreenPlay
           audience: https://www.nuget.org
-          token-service-url: https://token.actions.githubusercontent.com
 
       - name: Publish to NuGet
         # Publish in dependency order: Core first, then Playwright, then Reqnroll.
