@@ -115,7 +115,7 @@ jobs:
           if-no-files-found: error
 
       # NuGet Trusted Publishing via GitHub OIDC.
-      # No API key required. Authentication is performed via the GitHub OIDC token.
+      # Exchanges GitHub OIDC token for short-lived NuGet API key.
       # The NuGet Trusted Publishing policy must be configured at nuget.org with:
       #   Repository owner: hadijahangiri
       #   Repository:       NScreenPlay
@@ -123,14 +123,16 @@ jobs:
       #   Environment:      (none)
       - name: Authenticate with NuGet (OIDC Trusted Publishing)
         uses: NuGet/login@v1
+        id: login
         with:
-          source-url: https://api.nuget.org/v3/index.json
+          user: github
+          audience: https://www.nuget.org
 
       - name: Publish to NuGet
         # Publish in dependency order: Core first, then Playwright, then Reqnroll.
         # If any push fails, the workflow stops — no partial publish recovery.
         run: |
-          dotnet nuget push artifacts/NScreenplay.Core.0.1.0.nupkg          --source https://api.nuget.org/v3/index.json
-          dotnet nuget push artifacts/NScreenplay.Playwright.0.1.0.nupkg    --source https://api.nuget.org/v3/index.json
-          dotnet nuget push artifacts/NScreenplay.Reqnroll.0.1.0.nupkg      --source https://api.nuget.org/v3/index.json
+          dotnet nuget push artifacts/NScreenplay.Core.0.1.0.nupkg          --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v2/package
+          dotnet nuget push artifacts/NScreenplay.Playwright.0.1.0.nupkg    --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v2/package
+          dotnet nuget push artifacts/NScreenplay.Reqnroll.0.1.0.nupkg      --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v2/package
 
