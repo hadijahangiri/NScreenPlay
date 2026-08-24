@@ -49,10 +49,11 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore
-        run: dotnet restore
+        # Use .sln for broad compatibility; .slnx is .NET 10+ only
+        run: dotnet restore NScreenplay.sln
 
       - name: Build Debug (warnings as errors)
-        run: dotnet build --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
+        run: dotnet build NScreenplay.sln --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
 
       - name: Test Debug
         # dotnet test against explicit project dirs — excludes samples/ (requires Playwright browser)
@@ -63,7 +64,7 @@ jobs:
           dotnet test tests/NScreenplay.Reqnroll.Tests       --no-build -v minimal
 
       - name: Build Release (warnings as errors)
-        run: dotnet build -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
+        run: dotnet build NScreenplay.sln -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
 
       - name: Test Release
         # same explicit scope as Debug — keeps parity, excludes samples/
@@ -103,10 +104,10 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore NScreenplay.sln
 
       - name: Build Release
-        run: dotnet build -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
+        run: dotnet build NScreenplay.sln -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
 
       - name: Pack
         run: |
