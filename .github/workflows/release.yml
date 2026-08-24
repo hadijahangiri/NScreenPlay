@@ -123,16 +123,17 @@ jobs:
       #   Environment:      (none)
       - name: Authenticate with NuGet (OIDC Trusted Publishing)
         uses: NuGet/login@v1
-        id: login
         with:
           user: github
           audience: https://www.nuget.org
+          token-service-url: https://token.actions.githubusercontent.com
 
       - name: Publish to NuGet
         # Publish in dependency order: Core first, then Playwright, then Reqnroll.
         # If any push fails, the workflow stops — no partial publish recovery.
+        # NuGet/login@v1 has already configured credentials in NuGet.config via OIDC.
         run: |
-          dotnet nuget push artifacts/NScreenplay.Core.0.1.0.nupkg          --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v2/package
-          dotnet nuget push artifacts/NScreenplay.Playwright.0.1.0.nupkg    --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v2/package
-          dotnet nuget push artifacts/NScreenplay.Reqnroll.0.1.0.nupkg      --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v2/package
+          dotnet nuget push artifacts/NScreenplay.Core.0.1.0.nupkg          --source https://api.nuget.org/v3/index.json
+          dotnet nuget push artifacts/NScreenplay.Playwright.0.1.0.nupkg    --source https://api.nuget.org/v3/index.json
+          dotnet nuget push artifacts/NScreenplay.Reqnroll.0.1.0.nupkg      --source https://api.nuget.org/v3/index.json
 
