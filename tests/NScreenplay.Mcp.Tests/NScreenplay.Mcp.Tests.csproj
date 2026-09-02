@@ -24,6 +24,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\NScreenplay.Core\NScreenplay.Core.csproj" />
     <ProjectReference Include="..\..\src\NScreenplay.Mcp\NScreenplay.Mcp.csproj" />
+    <ProjectReference Include="..\..\src\NScreenplay.Playwright\NScreenplay.Playwright.csproj" />
+    <ProjectReference Include="..\..\src\NScreenplay.Reqnroll\NScreenplay.Reqnroll.csproj" />
   </ItemGroup>
 
 </Project>
