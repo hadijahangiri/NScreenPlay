@@ -1,7 +1,25 @@
+---
+name: test-authoring
+description: Create new NScreenplay tests by following the required workflow from requirement analysis through Actors, Abilities, Targets, Tasks, Gherkin, Step Definitions, Consequences, build, and test execution.
+---
+
 # NScreenplay — Test Authoring Skill
 
 ## What This Skill Is For
 Use this skill when **creating new tests** in NScreenplay. Follow this workflow precisely. Do not skip steps.
+
+## Adoption Workflow Guardrail
+
+If the user asks to adopt NScreenPlay in an existing project, do not start by writing tests.
+Use the MCP adoption workflow first:
+
+1. `nscreenplay_analyze_project`
+2. `nscreenplay_create_adoption_plan`
+3. Present plan and request explicit approval
+4. `nscreenplay_apply_adoption_plan` (after approval)
+5. Validate and report
+
+Do not bypass Analyze/Plan. Do not call Apply without approval.
 
 ---
 
@@ -53,7 +71,7 @@ What does the Actor need to perform the test?
 | Scenario Type | Ability |
 |---|---|
 | Browser test | `BrowseTheWeb` (via `NScreenplay.Playwright`) |
-| API test | `CallAnApi` (via `NScreenplay.Api`) |
+| API test | custom `HttpClient`-backed Ability using `NScreenplay.Core` (no official `NScreenplay.Api` package) |
 | Combined | Multiple abilities on same Actor |
 
 Abilities are granted in the lifecycle hook, not in step definitions:

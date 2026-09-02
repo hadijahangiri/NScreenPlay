@@ -1,3 +1,8 @@
+---
+name: playwright
+description: Use NScreenplay Playwright integration when creating or modifying browser automation with BrowseTheWeb, Targets, Interactions, Questions, and Playwright-based test components.
+---
+
 # NScreenplay — Playwright Integration Skill
 
 ## What This Skill Is For

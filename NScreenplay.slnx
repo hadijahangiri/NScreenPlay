@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/samples/">
     <Project Path="samples/Login/Login.csproj" />
+    <Project Path="samples/ReqnrollSmoke/ReqnrollSmoke.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/NScreenplay.Core/NScreenplay.Core.csproj" />

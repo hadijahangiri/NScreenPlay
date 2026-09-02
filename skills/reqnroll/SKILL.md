@@ -1,3 +1,8 @@
+---
+name: reqnroll
+description: Use NScreenplay Reqnroll integration when creating or modifying Gherkin Feature files, Step Definitions, scenario hooks, and BDD tests using Reqnroll.
+---
+
 # NScreenplay — Reqnroll Integration Skill
 
 ## What This Skill Is For

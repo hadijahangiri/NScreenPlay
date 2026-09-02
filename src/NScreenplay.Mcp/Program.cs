@@ -5,6 +5,8 @@ using NScreenplay.Mcp.AI;
 using NScreenplay.Mcp.Analysis;
 using NScreenplay.Mcp.Discovery;
 using NScreenplay.Mcp.Healing;
+using NScreenplay.Mcp.Adoption;
+using NScreenplay.Mcp.ProjectAnalysis;
 using NScreenplay.Mcp.Planning;
 using NScreenplay.Mcp.Prompts;
 using NScreenplay.Mcp.Resources;
@@ -16,6 +18,8 @@ var skillsPath = Environment.GetEnvironmentVariable("NSCREENPLAY_SKILLS_PATH")
     ?? Path.Combine(AppContext.BaseDirectory, "skills");
 
 var scanAssemblies = LoadScanAssemblies();
+var workspaceRoot = Environment.GetEnvironmentVariable("NSCREENPLAY_WORKSPACE_ROOT")
+    ?? Directory.GetCurrentDirectory();
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -29,14 +33,15 @@ builder.Services.AddSingleton<FailureAnalyzer>();
 builder.Services.AddSingleton<RequirementAnalyzer>();
 builder.Services.AddSingleton<TestPlanGenerator>();
 builder.Services.AddSingleton<AiContextBuilder>();
+builder.Services.AddSingleton<AdoptionPlanner>();
+builder.Services.AddSingleton(new AdoptionApplier(workspaceRoot));
 builder.Services.AddSingleton<NScreenplayTools>();
 builder.Services.AddSingleton<PlanningTools>();
 builder.Services.AddSingleton<NScreenplayResources>();
 builder.Services.AddSingleton<NScreenplayPrompts>();
 
 // Healing services
-var workspaceRoot = Environment.GetEnvironmentVariable("NSCREENPLAY_WORKSPACE_ROOT")
-    ?? "g:/_projects/MySelf/NScreenPlay";
+builder.Services.AddSingleton(new ProjectAnalyzer(workspaceRoot, skillsPath));
 builder.Services.AddSingleton(new FileSafetyValidator(workspaceRoot));
 builder.Services.AddSingleton<ProposalStore>();
 builder.Services.AddSingleton<ProposalApplicator>();

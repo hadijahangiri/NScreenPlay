@@ -1,3 +1,8 @@
+---
+name: failure-analysis
+description: Analyze failed NScreenplay tests to determine root cause across application, test logic, selector, synchronization, infrastructure, and framework failures without modifying code during analysis.
+---
+
 # NScreenplay — Failure Analysis Skill
 
 ## What This Skill Is For

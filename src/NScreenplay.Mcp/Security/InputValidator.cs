@@ -57,4 +57,14 @@ public static class InputValidator
         if (!path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)) return false;
         return true;
     }
+
+    /// <summary>
+    /// Validates a project path for read-only analysis.
+    /// </summary>
+    public static bool IsValidProjectPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        if (path.IndexOfAny(['\0']) >= 0) return false;
+        return true;
+    }
 }

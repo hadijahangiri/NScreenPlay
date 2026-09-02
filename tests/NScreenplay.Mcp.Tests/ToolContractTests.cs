@@ -1,7 +1,9 @@
 using NScreenplay.Core;
+using NScreenplay.Mcp.Adoption;
 using NScreenplay.Mcp.Analysis;
 using NScreenplay.Mcp.Discovery;
 using NScreenplay.Mcp.Models;
+using NScreenplay.Mcp.ProjectAnalysis;
 using NScreenplay.Mcp.Tools;
 using System.IO;
 using System.Reflection;
@@ -17,18 +19,24 @@ public class ToolContractTests : IDisposable
 {
     private readonly NScreenplayTools _tools;
     private readonly string _tempSkillsDir;
+    private readonly string _tempProjectsDir;
+    private readonly AdoptionPlanner _planner = new();
 
     public ToolContractTests()
     {
         _tempSkillsDir = Path.Combine(Path.GetTempPath(), $"nscreenplay-contract-{Guid.NewGuid():N}");
+        _tempProjectsDir = Path.Combine(Path.GetTempPath(), $"nscreenplay-project-contract-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempSkillsDir);
+        Directory.CreateDirectory(_tempProjectsDir);
         CreateSkill("screenplay", "# Screenplay Skill\n\nLearn the Screenplay pattern.");
         CreateSkill("playwright", "# Playwright Skill\n\nLearn Playwright integration.");
 
         var discovery = new ComponentDiscovery([typeof(TestComponents).Assembly]);
         var skillLoader = new SkillLoader(_tempSkillsDir);
         var analyzer = new FailureAnalyzer();
-        _tools = new NScreenplayTools(discovery, skillLoader, analyzer);
+        var projectAnalyzer = new ProjectAnalyzer(_tempProjectsDir, _tempSkillsDir);
+        var applier = new AdoptionApplier(_tempProjectsDir);
+        _tools = new NScreenplayTools(discovery, skillLoader, analyzer, projectAnalyzer, _planner, applier);
     }
 
     [Fact]
@@ -120,9 +128,120 @@ public class ToolContractTests : IDisposable
         Assert.True(doNotDo.GetArrayLength() > 0);
     }
 
+    [Fact]
+    public void AnalyzeProject_RegisteredAndReturnsExpectedContract()
+    {
+        var projectPath = CreateProject("AnalyzeProject", "xunit", "Microsoft.Playwright", "using Xunit; using Microsoft.Playwright; [Fact] public void Test() { }");
+
+        var json = _tools.AnalyzeProject(projectPath);
+        var doc = JsonDocument.Parse(json);
+
+        Assert.True(doc.RootElement.TryGetProperty("projectPath", out _));
+        Assert.True(doc.RootElement.TryGetProperty("testFramework", out var testFramework));
+        Assert.Equal("xunit", testFramework.GetString());
+        Assert.True(doc.RootElement.TryGetProperty("browserAutomation", out var browserAutomation));
+        Assert.Equal("playwright", browserAutomation.GetString());
+        Assert.True(doc.RootElement.TryGetProperty("recommendedPackages", out _));
+        Assert.True(doc.RootElement.TryGetProperty("recommendedSkills", out _));
+    }
+
+    [Fact]
+    public void AnalyzeProject_InvalidPath_ReturnsSafeError()
+    {
+        var json = _tools.AnalyzeProject("../../../etc/passwd");
+        var doc = JsonDocument.Parse(json);
+        Assert.True(doc.RootElement.TryGetProperty("error", out _));
+    }
+
+    [Fact]
+    public void AnalyzeProject_DoesNotMutateProjectDirectory()
+    {
+        var projectPath = CreateProject("NoMutation", "xunit", null, "using Xunit; [Fact] public void Test() { }");
+        var before = Directory.GetFiles(projectPath, "*", SearchOption.AllDirectories).OrderBy(x => x).ToArray();
+
+        _ = _tools.AnalyzeProject(projectPath);
+
+        var after = Directory.GetFiles(projectPath, "*", SearchOption.AllDirectories).OrderBy(x => x).ToArray();
+        Assert.Equal(before, after);
+    }
+
+    [Fact]
+    public void CreateAdoptionPlan_ReturnsStructuredPlan()
+    {
+        var projectPath = CreateProject("PlanProject", "xunit", "Microsoft.Playwright", "using Xunit; using Microsoft.Playwright; [Fact] public void Test() { }");
+        var analysis = JsonDocument.Parse(_tools.AnalyzeProject(projectPath)).RootElement;
+        var plan = _planner.Create(new ProjectAnalysisResult(
+            analysis.GetProperty("projectPath").GetString()!,
+            analysis.GetProperty("projectType").GetString(),
+            analysis.GetProperty("language").GetString(),
+            ["net10.0"],
+            analysis.GetProperty("testFramework").GetString(),
+            analysis.GetProperty("bddFramework").ValueKind == JsonValueKind.Null ? null : analysis.GetProperty("bddFramework").GetString(),
+            analysis.GetProperty("browserAutomation").GetString(),
+            analysis.GetProperty("apiTesting").GetBoolean(),
+            new NScreenplayPackagePresence(false, false, false, false),
+            analysis.GetProperty("screenplayDetected").GetBoolean(),
+            [],
+            [],
+            [],
+            analysis.GetProperty("adoptionLevel").GetString()!,
+            [],
+            [],
+            []));
+
+        Assert.Equal(projectPath, plan.ProjectPath);
+        Assert.NotEmpty(plan.RecommendedPackages);
+        Assert.NotEmpty(plan.RecommendedSkills);
+        Assert.NotEmpty(plan.Steps);
+    }
+
+    [Fact]
+    public void ApplyAdoptionPlan_EmptyPayload_ReturnsErrorJson()
+    {
+        var projectPath = CreateProject("ApplyToolEmptyPayload", "xunit", null, "using Xunit; [Fact] public void Test() { }");
+
+        var json = _tools.ApplyAdoptionPlan(projectPath, string.Empty, dryRun: true);
+        var doc = JsonDocument.Parse(json);
+
+        Assert.True(doc.RootElement.TryGetProperty("error", out _));
+    }
+
+    [Fact]
+    public void ApplyAdoptionPlan_MalformedPayload_ReturnsErrorJson()
+    {
+        var projectPath = CreateProject("ApplyToolMalformedPayload", "xunit", null, "using Xunit; [Fact] public void Test() { }");
+
+        var json = _tools.ApplyAdoptionPlan(projectPath, "{ not-valid-json", dryRun: true);
+        var doc = JsonDocument.Parse(json);
+
+        Assert.True(doc.RootElement.TryGetProperty("error", out _));
+    }
+
+    [Fact]
+    public void ApplyAdoptionPlan_TamperedPlan_IsRejectedByAnalyzePlanIntegrityGate()
+    {
+        var projectPath = CreateProject("ApplyToolTamperedPlan", "xunit", null, "using Xunit; [Fact] public void Test() { }");
+
+        var analysisJson = _tools.AnalyzeProject(projectPath);
+        var analysis = JsonSerializer.Deserialize<ProjectAnalysisResult>(analysisJson, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        })!;
+        var plan = _planner.Create(analysis);
+        var tampered = plan with { RecommendedPackages = ["NScreenplay.Core", "NScreenplay.Unknown"] };
+        var tamperedJson = JsonSerializer.Serialize(tampered, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        var json = _tools.ApplyAdoptionPlan(projectPath, tamperedJson, dryRun: true);
+        var doc = JsonDocument.Parse(json);
+
+        Assert.True(doc.RootElement.TryGetProperty("error", out var error));
+        Assert.Contains("does not match the current Analyze -> Plan result", error.GetString(), StringComparison.Ordinal);
+    }
+
     public void Dispose()
     {
         try { Directory.Delete(_tempSkillsDir, recursive: true); } catch { }
+        try { Directory.Delete(_tempProjectsDir, recursive: true); } catch { }
     }
 
     private void CreateSkill(string name, string content)
@@ -130,6 +249,17 @@ public class ToolContractTests : IDisposable
         var dir = Path.Combine(_tempSkillsDir, name);
         Directory.CreateDirectory(dir);
         File.WriteAllText(Path.Combine(dir, "SKILL.md"), content);
+    }
+
+    private string CreateProject(string name, string? frameworks, string? packages, string content)
+    {
+        var dir = Path.Combine(_tempProjectsDir, name);
+        Directory.CreateDirectory(dir);
+        var tf = frameworks is null ? "<TargetFramework>net10.0</TargetFramework>" : $"<TargetFrameworks>{frameworks}</TargetFrameworks>";
+        var pkgRefs = packages is null ? string.Empty : string.Join(Environment.NewLine, packages.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(p => $"    <PackageReference Include=\"{p}\" Version=\"1.0.0\" />"));
+        File.WriteAllText(Path.Combine(dir, $"{name}.csproj"), $"<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup>{tf}<IsTestProject>true</IsTestProject></PropertyGroup><ItemGroup>{pkgRefs}</ItemGroup></Project>");
+        File.WriteAllText(Path.Combine(dir, "Sample.cs"), content);
+        return dir;
     }
 
     // ── Test components discoverable by ComponentDiscovery ───────────────────

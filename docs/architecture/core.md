@@ -24,9 +24,8 @@ graph LR
     Core["NScreenplay.Core\n(zero dependencies)"]
     Playwright["NScreenplay.Playwright"] -->|depends on| Core
     Reqnroll["NScreenplay.Reqnroll"] -->|depends on| Core
-    Api["NScreenplay.Api"] -->|depends on| Core
     Mcp["NScreenplay.Mcp"] -->|depends on| Core
-    Ai["NScreenplay.Ai"] -->|depends on| Core
+    Manual["Manual API Ability\n(custom HttpClient-backed ability)"] -->|uses| Core
 ```
 
 The dependency graph is strictly acyclic. Core is isolated.
@@ -65,7 +64,7 @@ Core defines the contract. Integration packages provide implementations:
 | Package | Ability |
 |---------|---------|
 | NScreenplay.Playwright | `BrowseTheWeb` |
-| NScreenplay.Api | `CallAnApi` |
+| Manual pattern | custom `HttpClient`-backed `IAbility` for API-only tests |
 
 Retrieval is strongly typed:
 

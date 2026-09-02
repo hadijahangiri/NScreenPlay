@@ -83,21 +83,22 @@ jobs:
           dotnet pack src/NScreenplay.Reqnroll/NScreenplay.Reqnroll.csproj -c Release --no-build -o artifacts/
 
       - name: Validate packages
-        # Verify expected package IDs, version 0.1.0, and no unexpected files
+        # Verify expected package IDs (version-agnostic) and no unexpected files
         shell: pwsh
         run: |
           $pkgs = Get-ChildItem artifacts/*.nupkg
           Write-Host "Generated packages:"
           $pkgs | ForEach-Object { Write-Host "  $($_.Name) ($([math]::Round($_.Length/1024,1)) KB)" }
 
-          $expected = @("NScreenplay.Core.0.1.0.nupkg","NScreenplay.Playwright.0.1.0.nupkg","NScreenplay.Reqnroll.0.1.0.nupkg")
-          foreach ($e in $expected) {
-            if (-not (Test-Path "artifacts/$e")) {
-              Write-Error "Expected package missing: $e"
+          $expectedIds = @("NScreenplay.Core", "NScreenplay.Playwright", "NScreenplay.Reqnroll")
+          foreach ($id in $expectedIds) {
+            $matches = Get-ChildItem "artifacts/$id.*.nupkg" -ErrorAction SilentlyContinue
+            if (-not $matches) {
+              Write-Error "Expected package missing for id: $id"
               exit 1
             }
           }
-          Write-Host "All expected packages present."
+          Write-Host "All expected package IDs present."
 
           # Verify no unexpected packages (e.g. debug, test, MCP, samples)
           $unexpected = $pkgs | Where-Object { $_.Name -notmatch '^NScreenplay\.(Core|Playwright|Reqnroll)\.' }
@@ -133,7 +134,7 @@ jobs:
         # If any push fails, the workflow stops — no partial publish recovery.
         # NuGet/login@v1 returns a short-lived API key in steps.login.outputs.NUGET_API_KEY.
         run: |
-          dotnet nuget push artifacts/NScreenplay.Core.0.1.0.nupkg          --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://www.nuget.org/api/v2/package
-          dotnet nuget push artifacts/NScreenplay.Playwright.0.1.0.nupkg    --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://www.nuget.org/api/v2/package
-          dotnet nuget push artifacts/NScreenplay.Reqnroll.0.1.0.nupkg      --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://www.nuget.org/api/v2/package
+          dotnet nuget push artifacts/NScreenplay.Core.*.nupkg       --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://www.nuget.org/api/v2/package
+          dotnet nuget push artifacts/NScreenplay.Playwright.*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://www.nuget.org/api/v2/package
+          dotnet nuget push artifacts/NScreenplay.Reqnroll.*.nupkg   --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://www.nuget.org/api/v2/package
 

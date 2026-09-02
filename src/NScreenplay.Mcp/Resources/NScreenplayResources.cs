@@ -41,13 +41,80 @@ public sealed class NScreenplayResources
             name = "NScreenplay",
             version = "0.1.0",
             description = "AI-native Screenplay Test Automation Framework for .NET",
+            officialPackages = new[] { "NScreenplay.Core", "NScreenplay.Playwright", "NScreenplay.Reqnroll" },
+            tooling = new[] { "NScreenplay.Mcp" },
+            manualPatterns = new[]
+            {
+                "xUnit + HttpClient + NScreenplay.Core (no official NScreenplay.Api package)",
+                "BDDfy + preserve existing framework (no official NScreenplay.BDDfy adapter)"
+            },
             modules = new[] { "NScreenplay.Core", "NScreenplay.Playwright", "NScreenplay.Reqnroll", "NScreenplay.Mcp" },
             coreAbstractions = new[] { "Actor", "Ability", "Task", "Interaction", "Target", "Question", "Consequence" },
             approvalBoundary = new
             {
-                aiCanDo = new[] { "DISCOVER", "ANALYZE", "PLAN", "PROPOSE" },
-                aiCannotDo = new[] { "WRITE", "EXECUTE_SHELL", "COMMIT", "MODIFY_TESTS" },
-                note = "All modifications require explicit human approval."
+                aiCanDo = new[] { "DISCOVER", "ANALYZE", "PLAN", "PROPOSE", "APPLY_APPROVED_PLAN" },
+                aiCannotDo = new[] { "EXECUTE_SHELL", "EXECUTE_POWERSHELL", "RUN_ARBITRARY_SCRIPT", "AUTONOMOUS_MIGRATION" },
+                note = "All mutations require explicit human approval and a validated adoption plan."
+            }
+        }, JsonOpts);
+
+    [McpServerResource(UriTemplate = "nscreenplay://adoption-workflow", Name = "Adoption Workflow", MimeType = "application/json")]
+    [Description("Canonical AI adoption workflow: Analyze -> Plan -> Approve -> Apply -> Validate.")]
+    public string GetAdoptionWorkflowResource() =>
+        JsonSerializer.Serialize(new
+        {
+            workflow = new[]
+            {
+                new { order = 1, step = "Analyze", requiredTool = "nscreenplay_analyze_project", mutatesWorkspace = false },
+                new { order = 2, step = "Plan", requiredTool = "nscreenplay_create_adoption_plan", mutatesWorkspace = false },
+                new { order = 3, step = "PresentPlan", requiredTool = "none", mutatesWorkspace = false },
+                new { order = 4, step = "HumanApproval", requiredTool = "none", mutatesWorkspace = false },
+                new { order = 5, step = "Apply", requiredTool = "nscreenplay_apply_adoption_plan", mutatesWorkspace = true },
+                new { order = 6, step = "Validate", requiredTool = "none", mutatesWorkspace = false },
+                new { order = 7, step = "FinalReport", requiredTool = "none", mutatesWorkspace = false }
+            },
+            requiredBoundaries = new
+            {
+                approvalRequiredBeforeApply = true,
+                applyMustUseValidatedPlan = true,
+                plannerIsAuthoritativeForPlan = true,
+                noAutonomousAdoptTool = true
+            },
+            applyCapabilities = new
+            {
+                allowed = new[] { "ProjectPathValidation", "PackageReferenceAdditionsFromPlan", "DryRun" },
+                disallowed = new[]
+                {
+                    "ShellExecution",
+                    "PowerShellExecution",
+                    "ArbitraryCodeExecution",
+                    "ArbitraryScriptExecution",
+                    "FrameworkReplacement",
+                    "UnplannedFileMutation"
+                }
+            },
+            failureHandling = new
+            {
+                analysisFailure = "Stop. Do not create a plan.",
+                planningFailure = "Stop. Do not apply.",
+                planRejected = "Stop. No mutation.",
+                applyFailure = "Return structured failure. Do not retry with a new strategy.",
+                validationFailure = "ADOPTION APPLIED - VALIDATION INCOMPLETE"
+            },
+            validationGuidance = new
+            {
+                checks = new[]
+                {
+                    "Expected package references are present.",
+                    "Apply result status is Success or DryRun as requested.",
+                    "No unrelated project path was modified.",
+                    "No unplanned mutation was reported."
+                },
+                manualOnly = new[]
+                {
+                    "Build and test execution is outside MCP mutation safety boundary.",
+                    "Run project-specific build/test commands manually after apply approval."
+                }
             }
         }, JsonOpts);
 

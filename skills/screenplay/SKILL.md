@@ -1,3 +1,8 @@
+---
+name: screenplay
+description: Apply the NScreenplay Screenplay Pattern when creating, reading, reviewing, or modifying .NET test automation using Actors, Abilities, Tasks, Interactions, Targets, Questions, and Consequences.
+---
+
 # NScreenplay — Screenplay Pattern Skill
 
 ## What This Skill Is For
@@ -32,7 +37,12 @@ An Ability represents something an Actor can do (browse the web, call an API, et
 
 ```csharp
 actor.Can(BrowseTheWeb.Using(page));      // NScreenplay.Playwright
-actor.Can(CallAnApi.Using(httpClient));   // NScreenplay.Api
+
+// API-only projects: keep the test framework and model the HTTP capability
+// as a custom Ability built on NScreenplay.Core. There is no official
+// NScreenplay.Api package in this repository.
+var httpAbility = new HttpClientAbility(httpClient);
+actor.Can(httpAbility);
 ```
 
 - Abilities are granted to the Actor, not embedded in Tasks.

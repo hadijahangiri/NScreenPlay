@@ -1,3 +1,8 @@
+---
+name: test-review
+description: Review existing NScreenplay tests for Screenplay architecture, thin Step Definitions, selector usage, Tasks, Targets, timing, assertions, isolation, maintainability, and other test-quality violations.
+---
+
 # NScreenplay — Test Review Skill
 
 ## What This Skill Is For

@@ -1,10 +1,15 @@
+---
+name: healing
+description: Guide approval-gated healing of failed NScreenplay tests by proposing minimal targeted fixes based on failure evidence; never modify code without explicit human approval.
+---
+
 # NScreenplay — Healing Skill
 
-## Status: FUTURE FUNCTIONALITY
+## Status: IMPLEMENTED WITH APPROVAL GATE
 
-**Healing is not yet implemented in NScreenplay.**
+Healing is implemented in NScreenplay MCP as an approval-gated workflow.
 
-This skill defines the **rules and constraints** that a future healing agent must follow. It exists to prevent premature or unsafe healing implementations from being built.
+Available MCP tools include proposal retrieval/listing, human approval/rejection, apply, and audit-log access. Healing remains intentionally non-autonomous.
 
 ---
 
@@ -23,7 +28,7 @@ This skill defines the **rules and constraints** that a future healing agent mus
 
 ---
 
-## The Healing Workflow (Future)
+## The Healing Workflow
 
 ```
 Test failure detected
@@ -53,7 +58,7 @@ Human review and approval
   - Human reads proposed fix
   - Human approves or rejects
         ↓
-Change applied (only after explicit approval)
+Change applied (only after explicit human approval)
         ↓
 Test re-run to verify fix
 ```
@@ -61,6 +66,8 @@ Test re-run to verify fix
 ---
 
 ## Rules for Future Healing Agents
+
+These rules apply to the current healing workflow and must remain enforced.
 
 ### Rule H-01: Never Modify Code Without Explicit Approval
 A healing agent must **never** write to the filesystem without a documented, explicit human approval in the current session.
@@ -120,7 +127,7 @@ Healing fixes a broken test. Refactoring improves working code. Never conflate t
 
 ---
 
-## Evidence Model (Future Implementation)
+## Evidence Model
 
 When NScreenplay implements failure capture, a `FailureContext` will contain:
 
@@ -145,18 +152,18 @@ This model is intentionally minimal for v0.1. It will be extended in future mile
 
 ---
 
-## What Is Safe to Implement Now (v0.1)
-The following healing-adjacent capabilities are acceptable to build now:
+## What Is Safe in v0.1
+The following healing-adjacent capabilities are supported:
 
 1. **Failure capture**: Record `FailureContext` in `[AfterScenario]` when a scenario fails.
 2. **Screenshot on failure**: Capture a screenshot and attach path to `FailureContext`.
 3. **Report generation**: Produce a structured failure report consumable by AI tools.
 
-None of these modify code. They only collect and surface information.
+These are read-oriented and evidence-oriented operations.
 
 ---
 
-## What Must Not Be Built Until Approved
+## What Must Not Be Enabled
 - Automatic test code modification
 - Automatic selector replacement
 - Any healing that runs without human review

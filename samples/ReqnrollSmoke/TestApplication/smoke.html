@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reqnroll Smoke</title>
+</head>
+<body>
+  <main>
+    <h1 data-testid="smoke-title">Reqnroll Smoke</h1>
+    <label for="smoke-input">Name</label>
+    <input id="smoke-input" data-testid="smoke-input" type="text" />
+    <button id="smoke-submit" data-testid="smoke-submit" type="button">Submit</button>
+    <p id="smoke-result" data-testid="smoke-result" hidden>done</p>
+  </main>
+  <script>
+    const submit = document.getElementById('smoke-submit');
+    const result = document.getElementById('smoke-result');
+    submit.addEventListener('click', () => {
+      result.hidden = false;
+    });
+  </script>
+</body>
+</html>
