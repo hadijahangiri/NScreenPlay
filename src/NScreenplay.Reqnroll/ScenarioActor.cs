@@ -63,10 +63,41 @@ public sealed class ScenarioActor : IAsyncDisposable
         if (_disposed) return;
         _disposed = true;
 
+        Exception? firstError = null;
+
         if (_actor is not null)
-            await _actor.DisposeAsync().ConfigureAwait(false); // closes the page via BrowseTheWeb
+        {
+            try
+            {
+                await _actor.DisposeAsync().ConfigureAwait(false); // closes the page via BrowseTheWeb
+            }
+            catch (Exception ex) when (firstError is null)
+            {
+                firstError = ex;
+            }
+            catch
+            {
+                // swallow additional failures to allow remaining cleanup
+            }
+        }
 
         if (_context is not null)
-            await _context.DisposeAsync().ConfigureAwait(false);
+        {
+            try
+            {
+                await _context.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex) when (firstError is null)
+            {
+                firstError = ex;
+            }
+            catch
+            {
+                // swallow additional failures
+            }
+        }
+
+        if (firstError is not null)
+            throw firstError;
     }
 }

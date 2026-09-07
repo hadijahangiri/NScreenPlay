@@ -41,18 +41,18 @@ public static class TargetResolver
             LocatorStrategyKind.AltText     => page.GetByAltText(strategy.Value),
             LocatorStrategyKind.TestId      => page.GetByTestId(strategy.Value),
             LocatorStrategyKind.Label       => page.GetByLabel(strategy.Value),
-            LocatorStrategyKind.Role        => ResolveByRole(page, strategy),
+                LocatorStrategyKind.Role        => ResolveByRole(page, strategy, target.Name),
             _ => throw new NotSupportedException(
-                $"Locator strategy '{strategy.Kind}' is not supported by the Playwright adapter.")
+                    $"Locator strategy '{strategy.Kind}' is not supported by the Playwright adapter for target '{target.Name}'. Declared kinds: {string.Join(", ", target.Strategies.Select(s => s.Kind.ToString()))}")
         };
     }
 
-    private static ILocator ResolveByRole(IPage page, LocatorStrategy strategy)
+    private static ILocator ResolveByRole(IPage page, LocatorStrategy strategy, string targetName)
     {
         // Playwright's GetByRole requires an AriaRole enum value
         if (!Enum.TryParse<AriaRole>(strategy.Value, ignoreCase: true, out var role))
             throw new ArgumentException(
-                $"'{strategy.Value}' is not a valid ARIA role. " +
+                $"'{strategy.Value}' is not a valid ARIA role for target '{targetName}'. " +
                 $"Valid values: {string.Join(", ", Enum.GetNames<AriaRole>())}");
 
         var options = strategy.Qualifier is not null

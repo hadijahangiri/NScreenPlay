@@ -25,12 +25,20 @@ public sealed class NScreenplayHooks
 {
     private readonly IObjectContainer _scenarioContainer;
     private readonly FeatureContext _featureContext;
+        private readonly ScenarioContext? _scenarioContext;
 
     /// <summary>Creates the hooks with Reqnroll's scenario container and feature context.</summary>
     public NScreenplayHooks(IObjectContainer scenarioContainer, FeatureContext featureContext)
     {
         _scenarioContainer = scenarioContainer;
         _featureContext = featureContext;
+    }
+
+    /// <summary>Constructor overload that receives the ScenarioContext via DI.</summary>
+    public NScreenplayHooks(IObjectContainer scenarioContainer, FeatureContext featureContext, ScenarioContext scenarioContext)
+        : this(scenarioContainer, featureContext)
+    {
+        _scenarioContext = scenarioContext;
     }
 
     /// <summary>Registers a fresh <see cref="ScenarioActor"/> before each scenario.</summary>
@@ -48,7 +56,20 @@ public sealed class NScreenplayHooks
     public async Task DisposeScenarioActorAsync()
     {
         var scenarioActor = _scenarioContainer.Resolve<ScenarioActor>();
-        await scenarioActor.DisposeAsync().ConfigureAwait(false);
+
+        // Capture failure evidence before disposing resources
+        try
+        {
+            if (NScreenplayConfiguration.Options.CaptureOnFailure && _scenarioContext is not null && _scenarioContext.TestError is not null)
+            {
+                try { await FailureEvidenceCapturer.CaptureAsync(scenarioActor, _featureContext, _scenarioContext).ConfigureAwait(false); }
+                catch { /* swallow capture errors to avoid masking original failure */ }
+            }
+        }
+        finally
+        {
+            await scenarioActor.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
     /// <summary>

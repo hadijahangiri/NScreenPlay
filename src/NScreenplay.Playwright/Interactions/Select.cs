@@ -35,6 +35,8 @@ public sealed class Select : IInteraction
     /// <inheritdoc/>
     public async Task PerformAs(Actor actor, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (_target is null)
             throw new InvalidOperationException(
                 "Select interaction has no target. Call .From(target) before executing.");

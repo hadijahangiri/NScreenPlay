@@ -26,6 +26,7 @@ public sealed class Navigate : IInteraction
     /// <inheritdoc/>
     public async Task PerformAs(Actor actor, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var page = actor.GetAbility<BrowseTheWeb>().Page;
         await page.GotoAsync(_url).ConfigureAwait(false);
     }

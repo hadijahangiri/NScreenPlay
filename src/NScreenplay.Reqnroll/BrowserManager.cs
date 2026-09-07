@@ -45,10 +45,39 @@ public sealed class BrowserManager : IAsyncDisposable
         if (_disposed) return;
         _disposed = true;
 
-        if (_browser is not null)
-            await _browser.DisposeAsync().ConfigureAwait(false);
+        Exception? firstError = null;
 
-        _playwright?.Dispose();
+        if (_browser is not null)
+        {
+            try
+            {
+                await _browser.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex) when (firstError is null)
+            {
+                firstError = ex;
+            }
+            catch
+            {
+                // swallow additional failures to allow Playwright disposal
+            }
+        }
+
+        try
+        {
+            _playwright?.Dispose();
+        }
+        catch (Exception ex) when (firstError is null)
+        {
+            firstError = ex;
+        }
+        catch
+        {
+            // swallow additional failures
+        }
+
+        if (firstError is not null)
+            throw firstError;
     }
 
     // Looks for the full Chromium executable when chromium-headless-shell is absent.

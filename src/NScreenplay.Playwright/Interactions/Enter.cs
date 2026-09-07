@@ -35,6 +35,8 @@ public sealed class Enter : IInteraction
     /// <inheritdoc/>
     public async Task PerformAs(Actor actor, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (_target is null)
             throw new InvalidOperationException(
                 "Enter interaction has no target. Call .Into(target) before executing.");

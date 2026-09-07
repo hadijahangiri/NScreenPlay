@@ -26,6 +26,8 @@ public sealed class Click : IInteraction
     /// <inheritdoc/>
     public async Task PerformAs(Actor actor, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var page = actor.GetAbility<BrowseTheWeb>().Page;
         var locator = TargetResolver.Resolve(page, _target);
         await locator.ClickAsync().ConfigureAwait(false);

@@ -8,7 +8,7 @@ namespace NScreenplay.Mcp.Healing;
 /// </summary>
 public sealed class FileSafetyValidator
 {
-    private static readonly string[] AllowedExtensions = [".cs", ".feature", ".json"];
+    private static readonly string[] AllowedExtensions = new[] { ".cs", ".feature", ".json", ".png", ".zip" };
     private readonly string _workspaceRoot;
 
     public FileSafetyValidator(string workspaceRoot)

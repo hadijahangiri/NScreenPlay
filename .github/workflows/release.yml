@@ -51,10 +51,10 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore NScreenplay.sln
+        run: dotnet restore NScreenplay.slnx
 
       - name: Build Release (warnings as errors)
-        run: dotnet build NScreenplay.sln -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
+        run: dotnet build NScreenplay.slnx -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
 
       - name: Test Release
         # Explicit project list excludes samples/ which requires a Playwright browser

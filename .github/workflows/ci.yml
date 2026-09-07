@@ -50,11 +50,11 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore
-        # Use .sln for broad compatibility; .slnx is .NET 10+ only
-        run: dotnet restore NScreenplay.sln
+        # Use canonical solution file for .NET 10+: NScreenplay.slnx
+        run: dotnet restore NScreenplay.slnx
 
       - name: Build Debug (warnings as errors)
-        run: dotnet build NScreenplay.sln --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
+        run: dotnet build NScreenplay.slnx --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
 
       - name: Test Debug
         # dotnet test against explicit project dirs â€” excludes samples/ (requires Playwright browser)
@@ -65,7 +65,7 @@ jobs:
           dotnet test tests/NScreenplay.Reqnroll.Tests       --no-build -v minimal
 
       - name: Build Release (warnings as errors)
-        run: dotnet build NScreenplay.sln -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
+        run: dotnet build NScreenplay.slnx -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
 
       - name: Test Release
         # same explicit scope as Debug â€” keeps parity, excludes samples/
@@ -105,7 +105,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore NScreenplay.sln
+        run: dotnet restore NScreenplay.slnx
 
       - name: Build Release
         run: dotnet build NScreenplay.sln -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false

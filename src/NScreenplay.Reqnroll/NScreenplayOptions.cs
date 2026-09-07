@@ -19,4 +19,10 @@ public sealed record NScreenplayOptions
 
     /// <summary>Default navigation timeout in milliseconds.</summary>
     public int TimeoutMilliseconds { get; init; } = 30_000;
+
+    /// <summary>When true, capture screenshot (and trace when available) on scenario failure.</summary>
+    public bool CaptureOnFailure { get; init; } = false;
+
+    /// <summary>Directory to write artifacts (relative to workspace root or absolute). If empty, uses a per-process temp directory.</summary>
+    public string? ArtifactsDirectory { get; init; } = null;
 }

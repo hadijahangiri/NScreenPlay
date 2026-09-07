@@ -20,10 +20,10 @@ cd NScreenPlay
 Use the repository root solution:
 
 ```bash
-dotnet restore NScreenplay.sln
-dotnet build NScreenplay.sln
-dotnet test NScreenplay.sln
-dotnet pack NScreenplay.sln -c Release -o artifacts
+dotnet restore NScreenplay.slnx
+dotnet build NScreenplay.slnx
+dotnet test NScreenplay.slnx
+dotnet pack NScreenplay.slnx -c Release -o artifacts
 ```
 
 ## Coding Expectations

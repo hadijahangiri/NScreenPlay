@@ -60,7 +60,8 @@ public sealed class ReqnrollSmokeHarnessTests
         for (var i = 0; i < 10; i++)
         {
             var root = Path.GetFullPath(Path.Combine(current, "..", "..", "..", ".."));
-            if (File.Exists(Path.Combine(root, "NScreenplay.sln")))
+            // Migration: prefer NScreenplay.slnx as the canonical solution file
+            if (File.Exists(Path.Combine(root, "NScreenplay.slnx")))
                 return root;
 
             var parent = Path.GetDirectoryName(current);
