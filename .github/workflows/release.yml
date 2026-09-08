@@ -129,12 +129,34 @@ jobs:
           user: NScreenPlay
           audience: https://www.nuget.org
 
-      - name: Publish to NuGet
-        # Publish in dependency order: Core first, then Playwright, then Reqnroll.
-        # If any push fails, the workflow stops — no partial publish recovery.
-        # NuGet/login@v1 returns a short-lived API key in steps.login.outputs.NUGET_API_KEY.
+      - name: List package files to publish
+        shell: pwsh
         run: |
-          dotnet nuget push artifacts/NScreenplay.Core.*.nupkg       --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://www.nuget.org/api/v2/package
-          dotnet nuget push artifacts/NScreenplay.Playwright.*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://www.nuget.org/api/v2/package
-          dotnet nuget push artifacts/NScreenplay.Reqnroll.*.nupkg   --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://www.nuget.org/api/v2/package
+          Write-Host "Listing artifacts directory contents"
+          $files = Get-ChildItem -Path "artifacts\*.nupkg" -File -ErrorAction SilentlyContinue
+          if ($files) {
+            $files | ForEach-Object { Write-Host "  Found: $($_.FullName) ($([math]::Round($_.Length/1024,1)) KB)" }
+          } else {
+            Write-Error "No .nupkg files found in artifacts/ — pack step may have failed or produced files in a different location"
+            exit 1
+          }
+
+      - name: Publish to NuGet
+        shell: pwsh
+        # Publish packages in dependency order: Core, Playwright, Reqnroll
+        # Expand globs in PowerShell explicitly to avoid literal wildcard issues.
+        run: |
+          $apiKey = '${{ steps.login.outputs.NUGET_API_KEY }}'
+          $order = @('NScreenplay.Core','NScreenplay.Playwright','NScreenplay.Reqnroll')
+          foreach ($id in $order) {
+            $matches = Get-ChildItem -Path "artifacts\$id.*.nupkg" -File -ErrorAction SilentlyContinue
+            if (-not $matches) {
+              Write-Error "No package found for id: $id"
+              exit 1
+            }
+            foreach ($pkg in $matches) {
+              Write-Host "Pushing package: $($pkg.FullName)"
+              dotnet nuget push $pkg.FullName --api-key $apiKey --source https://www.nuget.org/api/v2/package
+            }
+          }
 
