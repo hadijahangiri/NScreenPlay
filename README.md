@@ -28,19 +28,19 @@ Actor -> Ability -> Task -> Interaction -> Question -> Consequence
 ## Install
 
 ```bash
-dotnet add package NScreenplay.Core --version 0.1.0
+dotnet add package NScreenplay.Core --version 0.2.0
 ```
 
 If the project uses Playwright:
 
 ```bash
-dotnet add package NScreenplay.Playwright --version 0.1.0
+dotnet add package NScreenplay.Playwright --version 0.2.0
 ```
 
 If the project uses Reqnroll:
 
 ```bash
-dotnet add package NScreenplay.Reqnroll --version 0.1.0
+dotnet add package NScreenplay.Reqnroll --version 0.2.0
 ```
 
 ## Quick Start (xUnit + Playwright)

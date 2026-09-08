@@ -2,7 +2,7 @@
 
   <!-- Shared build properties for all NScreenplay projects -->
   <PropertyGroup>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Authors>NScreenplay Contributors</Authors>
     <Company>NScreenplay</Company>
     <Copyright>Copyright © 2026 NScreenplay Contributors</Copyright>

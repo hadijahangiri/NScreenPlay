@@ -1,21 +1,21 @@
 # Getting Started
 
-NScreenplay v0.1.0 is an AI-native Screenplay Test Automation Framework for .NET.
+NScreenplay v0.2.0 is an AI-native Screenplay Test Automation Framework for .NET.
 
 ## Install
 
 ```bash
-dotnet add package NScreenplay.Core --version 0.1.0
+dotnet add package NScreenplay.Core --version 0.2.0
 ```
 
 Add integration packages only when needed:
 
 ```bash
 # Browser automation projects (Playwright)
-dotnet add package NScreenplay.Playwright --version 0.1.0
+dotnet add package NScreenplay.Playwright --version 0.2.0
 
 # Reqnroll BDD projects
-dotnet add package NScreenplay.Reqnroll --version 0.1.0
+dotnet add package NScreenplay.Reqnroll --version 0.2.0
 
 # API-only projects
 # Keep xUnit + HttpClient and use NScreenplay.Core with a custom Ability.

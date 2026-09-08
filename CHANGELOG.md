@@ -81,6 +81,7 @@ All notable changes to NScreenplay are documented here.
 - Firefox and WebKit support in `BrowserManager`
 - Roslyn-based healing rules (AST-aware)
 - Screenshot capture on scenario failure
+ - Release v0.2.0: harden adoption + failure evidence (screenshots, artifact path safety)
 - LLM-assisted failure analysis (with explicit provider)
 - `NScreenplay.Api` package for HTTP/REST testing
 - `NScreenplay.Cli` package
