@@ -108,7 +108,7 @@ jobs:
         run: dotnet restore NScreenplay.slnx
 
       - name: Build Release
-        run: dotnet build NScreenplay.sln -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
+        run: dotnet build NScreenplay.slnx -c Release --no-restore -warnaserror -p:EnforceCodeStyleInBuild=false
 
       - name: Pack
         run: |
