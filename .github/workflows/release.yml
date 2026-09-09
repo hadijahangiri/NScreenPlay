@@ -147,16 +147,36 @@ jobs:
         # Expand globs in PowerShell explicitly to avoid literal wildcard issues.
         run: |
           $apiKey = '${{ steps.login.outputs.NUGET_API_KEY }}'
+          $nugetSource = 'https://api.nuget.org/v3/index.json'
           $order = @('NScreenplay.Core','NScreenplay.Playwright','NScreenplay.Reqnroll')
+
           foreach ($id in $order) {
-            $matches = Get-ChildItem -Path "artifacts\$id.*.nupkg" -File -ErrorAction SilentlyContinue
-            if (-not $matches) {
-              Write-Error "No package found for id: $id"
+            Write-Host "Resolving package files for: $id"
+            $matches = Get-ChildItem -Path "artifacts\$id.*.nupkg" -File -ErrorAction SilentlyContinue |
+                       Where-Object { $_.Name -notlike '*.symbols.nupkg' } |
+                       Sort-Object Name
+            if (-not $matches -or $matches.Count -eq 0) {
+              Write-Error "No package found for id: $id in artifacts/. Aborting publish."
               exit 1
             }
+
             foreach ($pkg in $matches) {
-              Write-Host "Pushing package: $($pkg.FullName)"
-              dotnet nuget push $pkg.FullName --api-key $apiKey --source https://www.nuget.org/api/v2/package
+              Write-Host "Validating existence of package file: $($pkg.FullName)"
+              if (-not (Test-Path $pkg.FullName)) {
+                Write-Error "Resolved package file does not exist: $($pkg.FullName)"
+                exit 1
+              }
             }
+
+            foreach ($pkg in $matches) {
+              Write-Host "Pushing package: $($pkg.FullName) to $nugetSource"
+              # Use --skip-duplicate to tolerate already-published packages and fail on other errors
+              dotnet nuget push $pkg.FullName --api-key $apiKey --source $nugetSource --skip-duplicate
+              if ($LASTEXITCODE -ne 0) {
+                Write-Error "dotnet nuget push failed for $($pkg.FullName) with exit code $LASTEXITCODE"
+                exit $LASTEXITCODE
+              }
+            }
+            Write-Host "Published all packages for: $id"
           }
 
